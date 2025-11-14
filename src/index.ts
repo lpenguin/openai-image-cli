@@ -4,10 +4,17 @@ import OpenAI from 'openai';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
 
+interface Params {
+  prompt: string | null;
+  size: string;
+  n: number;
+  model: string;
+}
+
 // Parse command line arguments
-function parseArgs() {
+function parseArgs(): Params {
   const args = process.argv.slice(2);
-  const params = {
+  const params: Params = {
     prompt: null,
     size: '1024x1024',
     n: 1,
@@ -37,7 +44,7 @@ function parseArgs() {
   return params;
 }
 
-function printHelp() {
+function printHelp(): void {
   console.log(`
 OpenAI Image CLI - Generate images using DALL-E
 
@@ -50,9 +57,11 @@ Options:
   --size <size>       Image size (default: 1024x1024)
                       Valid sizes for dall-e-3: 1024x1024, 1024x1792, 1792x1024
                       Valid sizes for dall-e-2: 256x256, 512x512, 1024x1024
+                      Valid sizes for gpt-image: 1024x1024, 1024x1792, 1792x1024
+                      Valid sizes for gpt-image-mini: 1024x1024, 1024x1792, 1792x1024
   --n <number>        Number of images to generate (default: 1)
-                      Note: dall-e-3 only supports n=1
-  --model <model>     Model to use: dall-e-3 or dall-e-2 (default: dall-e-3)
+                      Note: dall-e-3, gpt-image, and gpt-image-mini only support n=1
+  --model <model>     Model to use: dall-e-3, dall-e-2, gpt-image, or gpt-image-mini (default: dall-e-3)
   --help, -h          Show this help message
 
 Environment Variables:
@@ -62,10 +71,12 @@ Examples:
   openai-image "A sunset over mountains"
   openai-image --prompt "A cat playing piano" --size 1024x1024 --n 1
   openai-image "Abstract art" --model dall-e-2 --size 512x512 --n 2
+  openai-image "Modern design" --model gpt-image --size 1024x1024
+  openai-image "Quick sketch" --model gpt-image-mini
 `);
 }
 
-async function generateImages(params) {
+async function generateImages(params: Params): Promise<void> {
   // Check for API key
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -82,8 +93,8 @@ async function generateImages(params) {
   }
 
   // Validate parameters based on model
-  if (params.model === 'dall-e-3' && params.n > 1) {
-    console.warn('Warning: dall-e-3 only supports n=1. Setting n to 1.');
+  if (['dall-e-3', 'gpt-image', 'gpt-image-mini'].includes(params.model) && params.n > 1) {
+    console.warn(`Warning: ${params.model} only supports n=1. Setting n to 1.`);
     params.n = 1;
   }
 
@@ -102,16 +113,26 @@ async function generateImages(params) {
       model: params.model,
       prompt: params.prompt,
       n: params.n,
-      size: params.size,
+      size: params.size as any, // OpenAI types might not include all sizes
     });
 
-    console.log(`\nSuccessfully generated ${response.data.length} image(s):`);
+    console.log(`\nSuccessfully generated ${response.data?.length || 0} image(s):`);
 
     // Download and save images
+    if (!response.data || response.data.length === 0) {
+      console.error('No images were generated');
+      process.exit(1);
+    }
+
     for (let i = 0; i < response.data.length; i++) {
       const imageData = response.data[i];
       const imageUrl = imageData.url;
       
+      if (!imageUrl) {
+        console.error(`Image ${i + 1}: No URL returned`);
+        continue;
+      }
+
       console.log(`\nImage ${i + 1}:`);
       console.log(`URL: ${imageUrl}`);
       
@@ -129,12 +150,13 @@ async function generateImages(params) {
         await writeFile(filepath, buffer);
         console.log(`Saved to: ${filepath}`);
       } catch (error) {
-        console.error(`Failed to download image ${i + 1}:`, error.message);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(`Failed to download image ${i + 1}:`, errorMessage);
       }
     }
 
     console.log('\nDone!');
-  } catch (error) {
+  } catch (error: any) {
     console.error('\nError generating images:');
     if (error.response) {
       console.error(`Status: ${error.response.status}`);

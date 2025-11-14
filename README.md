@@ -1,16 +1,32 @@
 # openai-image-cli
 
-A command-line interface tool for generating images using OpenAI's DALL-E models (dall-e-3 and dall-e-2).
+A command-line interface tool for generating images using OpenAI's DALL-E models (dall-e-3, dall-e-2, gpt-image, and gpt-image-mini).
 
 ## Features
 
-- Generate images using DALL-E 3 or DALL-E 2
+- Generate images using DALL-E 3, DALL-E 2, GPT-Image, or GPT-Image Mini
 - Customizable image sizes
 - Support for multiple image generation (dall-e-2 only)
 - Automatic image download and saving
 - Simple command-line interface
+- Written in TypeScript for type safety
 
 ## Installation
+
+### Using npx (Recommended)
+
+Run directly without installation:
+```bash
+npx openai-image-cli "A sunset over mountains"
+```
+
+### Global Installation
+
+```bash
+npm install -g openai-image-cli
+```
+
+### Local Development
 
 1. Clone the repository:
 ```bash
@@ -23,7 +39,12 @@ cd openai-image-cli
 npm install
 ```
 
-3. Set up your OpenAI API key:
+3. Build the project:
+```bash
+npm run build
+```
+
+4. Set up your OpenAI API key:
 ```bash
 export OPENAI_API_KEY=your-api-key-here
 ```
@@ -33,19 +54,30 @@ export OPENAI_API_KEY=your-api-key-here
 ### Basic Usage
 
 ```bash
-node index.js "A sunset over mountains"
+npx openai-image-cli "A sunset over mountains"
+# or if installed globally
+openai-image "A sunset over mountains"
+# or if running locally
+node dist/index.js "A sunset over mountains"
 ```
 
 ### With Options
 
 ```bash
-node index.js --prompt "A cat playing piano" --size 1024x1024 --n 1
+npx openai-image-cli --prompt "A cat playing piano" --size 1024x1024 --n 1
 ```
 
-### Using DALL-E 2 with Multiple Images
+### Using Different Models
 
 ```bash
-node index.js "Abstract art" --model dall-e-2 --size 512x512 --n 2
+# DALL-E 2 with multiple images
+npx openai-image-cli "Abstract art" --model dall-e-2 --size 512x512 --n 2
+
+# GPT-Image
+npx openai-image-cli "Modern design" --model gpt-image --size 1024x1024
+
+# GPT-Image Mini
+npx openai-image-cli "Quick sketch" --model gpt-image-mini
 ```
 
 ### Command-Line Options
@@ -54,9 +86,11 @@ node index.js "Abstract art" --model dall-e-2 --size 512x512 --n 2
 - `--size <size>` - Image size (default: 1024x1024)
   - DALL-E 3 sizes: 1024x1024, 1024x1792, 1792x1024
   - DALL-E 2 sizes: 256x256, 512x512, 1024x1024
+  - GPT-Image sizes: 1024x1024, 1024x1792, 1792x1024
+  - GPT-Image Mini sizes: 1024x1024, 1024x1792, 1792x1024
 - `--n <number>` - Number of images to generate (default: 1)
-  - Note: DALL-E 3 only supports n=1
-- `--model <model>` - Model to use: dall-e-3 or dall-e-2 (default: dall-e-3)
+  - Note: DALL-E 3, GPT-Image, and GPT-Image Mini only support n=1
+- `--model <model>` - Model to use: dall-e-3, dall-e-2, gpt-image, or gpt-image-mini (default: dall-e-3)
 - `--help, -h` - Show help message
 
 ### Environment Variables
@@ -68,17 +102,22 @@ node index.js "Abstract art" --model dall-e-2 --size 512x512 --n 2
 Generate a single image with DALL-E 3:
 ```bash
 export OPENAI_API_KEY=sk-...
-node index.js "A futuristic city at night"
+npx openai-image-cli "A futuristic city at night"
 ```
 
 Generate multiple images with DALL-E 2:
 ```bash
-node index.js "A cute robot" --model dall-e-2 --size 512x512 --n 3
+npx openai-image-cli "A cute robot" --model dall-e-2 --size 512x512 --n 3
 ```
 
-Generate a wide image:
+Generate a wide image with GPT-Image:
 ```bash
-node index.js "A panoramic landscape" --size 1792x1024
+npx openai-image-cli "A panoramic landscape" --model gpt-image --size 1792x1024
+```
+
+Use GPT-Image Mini for faster generation:
+```bash
+npx openai-image-cli "A simple sketch" --model gpt-image-mini
 ```
 
 ## Output
@@ -86,6 +125,15 @@ node index.js "A panoramic landscape" --size 1792x1024
 Generated images are automatically downloaded and saved to the current directory with filenames like:
 - `generated_image_<timestamp>_1.png`
 - `generated_image_<timestamp>_2.png`
+
+## Development
+
+Build the project:
+```bash
+npm run build
+```
+
+The TypeScript source is in `src/` and compiles to `dist/`.
 
 ## License
 
