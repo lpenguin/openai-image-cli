@@ -1,0 +1,6 @@
+node_modules/
+dist/
+generated_image_*.png
+*.log
+.env
+*.tsbuildinfo
