@@ -1,0 +1,24 @@
+{
+  "name": "openai-image-cli",
+  "version": "1.0.0",
+  "description": "CLI tool for generating images using OpenAI's DALL-E models",
+  "main": "index.js",
+  "type": "module",
+  "bin": {
+    "openai-image": "./index.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "openai",
+    "dall-e",
+    "image-generation",
+    "cli"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "openai": "^6.9.0"
+  }
+}
