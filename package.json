@@ -1,5 +1,5 @@
 {
-  "name": "openai-image-cli",
+  "name": "@lpenguin/openai-image-cli",
   "version": "1.0.0",
   "description": "CLI tool for generating images using OpenAI's DALL-E models",
   "main": "dist/index.js",
