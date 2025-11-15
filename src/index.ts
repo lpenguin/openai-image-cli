@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
 import OpenAI from 'openai';
-import { writeFile } from 'fs/promises';
+import { writeFile, readFile } from 'fs/promises';
 import { join } from 'path';
+import { Command } from 'commander';
 
 interface Params {
   prompt: string | null;
@@ -12,68 +13,68 @@ interface Params {
 }
 
 // Parse command line arguments
-function parseArgs(): Params {
-  const args = process.argv.slice(2);
-  const params: Params = {
-    prompt: null,
-    size: '1024x1024',
-    n: 1,
-    model: 'dall-e-3'
-  };
-
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-    
-    if (arg === '--prompt' && i + 1 < args.length) {
-      params.prompt = args[++i];
-    } else if (arg === '--size' && i + 1 < args.length) {
-      params.size = args[++i];
-    } else if (arg === '--n' && i + 1 < args.length) {
-      params.n = parseInt(args[++i], 10);
-    } else if (arg === '--model' && i + 1 < args.length) {
-      params.model = args[++i];
-    } else if (arg === '--help' || arg === '-h') {
-      printHelp();
-      process.exit(0);
-    } else if (!params.prompt) {
-      // First positional argument is the prompt
-      params.prompt = arg;
-    }
-  }
-
-  return params;
-}
-
-function printHelp(): void {
-  console.log(`
-OpenAI Image CLI - Generate images using DALL-E
-
-Usage:
-  openai-image <prompt> [options]
-  openai-image --prompt "<prompt>" [options]
-
-Options:
-  --prompt <text>     Image generation prompt (required)
-  --size <size>       Image size (default: 1024x1024)
-                      Valid sizes for dall-e-3: 1024x1024, 1024x1792, 1792x1024
-                      Valid sizes for dall-e-2: 256x256, 512x512, 1024x1024
-                      Valid sizes for gpt-image: 1024x1024, 1024x1792, 1792x1024
-                      Valid sizes for gpt-image-mini: 1024x1024, 1024x1792, 1792x1024
-  --n <number>        Number of images to generate (default: 1)
-                      Note: dall-e-3, gpt-image, and gpt-image-mini only support n=1
-  --model <model>     Model to use: dall-e-3, dall-e-2, gpt-image, or gpt-image-mini (default: dall-e-3)
-  --help, -h          Show this help message
-
+async function parseArgs(): Promise<Params> {
+  const program = new Command();
+  
+  program
+    .name('openai-image')
+    .description('CLI tool for generating images using OpenAI\'s DALL-E models')
+    .version('1.0.0')
+    .argument('[prompt]', 'Image generation prompt')
+    .option('--prompt <text>', 'Image generation prompt (alternative to positional argument)')
+    .option('--prompt-file <path>', 'Path to file containing the prompt')
+    .option('--size <size>', 'Image size (default: 1024x1024)', '1024x1024')
+    .option('--n <number>', 'Number of images to generate (default: 1)', '1')
+    .option('--model <model>', 'Model to use: dall-e-3, dall-e-2, gpt-image, or gpt-image-mini', 'dall-e-3')
+    .addHelpText('after', `
 Environment Variables:
   OPENAI_API_KEY      Your OpenAI API key (required)
 
 Examples:
   openai-image "A sunset over mountains"
   openai-image --prompt "A cat playing piano" --size 1024x1024 --n 1
+  openai-image --prompt-file prompt.txt --model dall-e-2
   openai-image "Abstract art" --model dall-e-2 --size 512x512 --n 2
   openai-image "Modern design" --model gpt-image --size 1024x1024
   openai-image "Quick sketch" --model gpt-image-mini
+
+Valid sizes:
+  - DALL-E 3: 1024x1024, 1024x1792, 1792x1024
+  - DALL-E 2: 256x256, 512x512, 1024x1024
+  - GPT-Image: 1024x1024, 1024x1792, 1792x1024
+  - GPT-Image Mini: 1024x1024, 1024x1792, 1792x1024
+
+Note: DALL-E 3, GPT-Image, and GPT-Image Mini only support n=1
 `);
+
+  program.parse();
+
+  const options = program.opts();
+  const args = program.args;
+
+  let prompt: string | null = null;
+
+  // Priority: positional argument > --prompt > --prompt-file
+  if (args.length > 0) {
+    prompt = args[0];
+  } else if (options.prompt) {
+    prompt = options.prompt;
+  } else if (options.promptFile) {
+    try {
+      prompt = (await readFile(options.promptFile, 'utf-8')).trim();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`Error reading prompt file: ${errorMessage}`);
+      process.exit(1);
+    }
+  }
+
+  return {
+    prompt,
+    size: options.size,
+    n: parseInt(options.n, 10),
+    model: options.model
+  };
 }
 
 async function generateImages(params: Params): Promise<void> {
@@ -169,5 +170,9 @@ async function generateImages(params: Params): Promise<void> {
 }
 
 // Main execution
-const params = parseArgs();
-generateImages(params);
+parseArgs().then(params => {
+  generateImages(params);
+}).catch(error => {
+  console.error('Error parsing arguments:', error.message);
+  process.exit(1);
+});

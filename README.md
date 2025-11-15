@@ -82,7 +82,8 @@ npx openai-image-cli "Quick sketch" --model gpt-image-mini
 
 ### Command-Line Options
 
-- `--prompt <text>` - Image generation prompt (required)
+- `--prompt <text>` - Image generation prompt (required if not using positional argument or --prompt-file)
+- `--prompt-file <path>` - Path to file containing the prompt (alternative to --prompt)
 - `--size <size>` - Image size (default: 1024x1024)
   - DALL-E 3 sizes: 1024x1024, 1024x1792, 1792x1024
   - DALL-E 2 sizes: 256x256, 512x512, 1024x1024
@@ -103,6 +104,11 @@ Generate a single image with DALL-E 3:
 ```bash
 export OPENAI_API_KEY=sk-...
 npx openai-image-cli "A futuristic city at night"
+```
+
+Generate an image using a prompt from a file:
+```bash
+npx openai-image-cli --prompt-file my-prompt.txt --model dall-e-3
 ```
 
 Generate multiple images with DALL-E 2:
